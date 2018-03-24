@@ -14,7 +14,7 @@ Usage: ${NAME} [OPTIONS]
                     (default: none, requires to be set)
         -r [...]    Set repository to upload to
                     (default: none, requires to be set)
-        -p [...]    Set Bintray project
+        -p [...]    Set Bintray project aka package
                     (default: none, requires to be set)
         -u [...]    Set Bintray username
                     (default: none, requires to be set)
@@ -93,9 +93,14 @@ RPM_RELEASE="$(rpm --queryformat "%{RELEASE}" -qp ${RPM_PACKAGE})"
 RPM_ARCH="$(rpm --queryformat "%{ARCH}" -qp ${RPM_PACKAGE})"
 RPM_BASENAME="$(basename ${RPM_PACKAGE})"
 
+printf "Bintray package: ${PROJECT}\n"
+printf "Package name: ${RPM_NAME}\n"
+printf "Package version: ${RPM_VERSION}-${RPM_RELEASE}\n"
+printf "Package arch: ${RPM_ARCH}\n"
+
 printf "Uploading ${RPM_BASENAME} rpm package to Bintray... "
 rc=$(curl -sk -u "${USER}:${APIKEY}" -T "${RPM_PACKAGE}" -X PUT -H "X-Bintray-Package:${RPM_NAME}" -H "X-Bintray-Version:${RPM_VERSION}-${RPM_RELEASE}" \
-"${BINTRAY_API}/content/${USER}/${REPO}/${RPM_BASENAME}" -w '%{http_code}' -o /dev/null)
+"${BINTRAY_API}/content/${USER}/${REPO}/${PROJECT}/${RPM_ARCH}/${RPM_BASENAME}" -w '%{http_code}' -o /dev/null)
 
 if [ $rc -eq 201 ]; then
 	printf "done\n"
