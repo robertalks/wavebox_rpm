@@ -100,7 +100,7 @@ printf "Package arch: ${RPM_ARCH}\n"
 
 printf "Uploading ${RPM_BASENAME} rpm package to Bintray... "
 rc=$(curl -sk -u "${USER}:${APIKEY}" -T "${RPM_PACKAGE}" -X PUT -H "X-Bintray-Package:${RPM_NAME}" -H "X-Bintray-Version:${RPM_VERSION}-${RPM_RELEASE}" \
-"${BINTRAY_API}/content/${USER}/${REPO}/${PROJECT}/${RPM_ARCH}/${RPM_BASENAME}" -w '%{http_code}' -o /dev/null)
+"${BINTRAY_API}/content/${USER}/${REPO}/${RPM_BASENAME}" -w '%{http_code}' -o /dev/null)
 
 if [ $rc -eq 201 ]; then
 	printf "done\n"
