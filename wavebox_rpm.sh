@@ -81,7 +81,7 @@ WAVEBOX_PATH="/opt/wavebox"
 WAVEBOX_ALT_VERSION="$(echo ${WAVEBOX_VERSION} | sed 's/\./_/g')"
 PACKAGE_NAME="Wavebox_${WAVEBOX_ALT_VERSION}_linux_${PACKAGE_ARCH}.tar.gz"
 PACKAGE_URL="https://github.com/wavebox/waveboxapp/releases/download/v${WAVEBOX_VERSION}/${PACKAGE_NAME}"
-RPM_PACKAGE_NAME="Wavebox"
+RPM_PACKAGE_NAME="wavebox"
 RPM_REVISION="1"
 RPM_PACKAGE="${RPM_PACKAGE_NAME}-${WAVEBOX_VERSION}-${RPM_REVISION}.${RPM_ARCH}.rpm"
 RPM_BUILD_PATH="${TMP_PATH}/rpmbuild"
@@ -108,6 +108,7 @@ Summary:          Wavebox is your secure desktop client for the cloud
 License:          MPL-2.0
 Vendor:           Wavebox
 URL:              https://wavebox.io
+BugURL:           https://github.com/wavebox/waveboxapp/issues
 ExcludeArch:      noarch
 Source:           ${PACKAGE_NAME}
 Requires(post):   coreutils shared-mime-info desktop-file-utils
