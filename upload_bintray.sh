@@ -116,6 +116,8 @@ EOF
 		printf "failed\n"
 		exit 1
 	fi
+elif [ $rc -eq 200 ]; then
+	printf "found\n"
 else
 	printf "failed\n"
 	exit 1
