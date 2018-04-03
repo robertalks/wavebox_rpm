@@ -1,3 +1,5 @@
-wavebox*.rpm
-Wavebox*.rpm
+fluxgui*.rpm
 .bintray-auth
+.gpg-passphrase
+.version
+.release

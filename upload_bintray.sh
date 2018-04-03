@@ -4,6 +4,7 @@ NAME="$(basename $0)"
 CWD="$(pwd)"
 BINTRAY_API="https://api.bintray.com"
 APIKEY=""
+SIGN_RPM=false
 
 usage() {
 	cat << EOF
@@ -18,6 +19,8 @@ Usage: ${NAME} [OPTIONS]
                     (default: none, requires to be set)
         -u [...]    Set Bintray username
                     (default: none, requires to be set)
+        -s          Sign RPM package
+                    (default: disable)
 
 Example:
        ${NAME} -f mynewapp-1.0.x86_64.rpm -r myrepo -u myaccount
@@ -25,7 +28,7 @@ Example:
 EOF
 }
 
-while getopts "hf:r:u:" opt; do
+while getopts "hf:r:u:s" opt; do
 	case "$opt" in
 		h)
 			usage
@@ -39,6 +42,9 @@ while getopts "hf:r:u:" opt; do
 		;;
 		u)
 			USER="${OPTARG}"
+		;;
+		s)
+			SIGN_RPM=true
 		;;
 	esac
 done
@@ -90,7 +96,7 @@ printf "Package version: ${RPM_VERSION}\n"
 printf "Package release: ${RPM_RELEASE}\n"
 printf "Package arch: ${RPM_ARCH}\n"
 
-printf "Checking if package ${RPM_NAME} exists... "
+printf "Checking if package ${RPM_NAME} exists in Bintray... "
 rc=$(curl -sk --connect-timeout 30 -m 60 -u "${USER}:${APIKEY}" -H "Content-Type:application/json" -H "Accept:application/json" \
 -X GET "${BINTRAY_API}/packages/${USER}/${REPO}/${RPM_NAME}" -w '%{http_code}' -o /dev/null)
 if [ $rc -eq 404 -a $rc -ne 200 ]; then
@@ -106,7 +112,7 @@ cat << EOF > ${jsonTmp}
 "vcs_url": "${RPM_BUGURL}"
 }
 EOF
-	printf "Creating package ${RPM_NAME}... "
+	printf "Creating package ${RPM_NAME} in Bintray... "
 	rc=$(curl -sk --connect-timeout 30 -m 60 -u "${USER}:${APIKEY}" -H "Content-Type:application/json" -H "Accept:application/json" \
 -X POST -d "@${jsonTmp}" "${BINTRAY_API}/packages/${USER}/${REPO}" -w '%{http_code}' -o /dev/null)
 	rm -f ${jsonTmp} >/dev/null 2>&1
@@ -123,7 +129,7 @@ else
 	exit 1
 fi
 
-printf "Uploading ${RPM_BASENAME} rpm package to Bintray... "
+printf "Uploading ${RPM_BASENAME} package to Bintray... "
 rc=$(curl --connect-timeout 30 -m 60 -sk -u "${USER}:${APIKEY}" -T "${RPM_PACKAGE}" -X PUT \
 -H "X-Bintray-Package:${RPM_NAME}" -H "X-Bintray-Version:${RPM_VERSION}-${RPM_RELEASE}" \
 "${BINTRAY_API}/content/${USER}/${REPO}/${RPM_BASENAME}" -w '%{http_code}' -o /dev/null)
@@ -135,7 +141,7 @@ else
 	exit 1
 fi
 
-printf "Publishing ${RPM_BASENAME} rpm package to Bintray... "
+printf "Publishing ${RPM_BASENAME} package to Bintray... "
 rc=$(curl -sk --connect-timeout 30 -m 60 -u "${USER}:${APIKEY}" -X POST -H "Content-Type:application/json" -H "Accept:application/json" \
 ${BINTRAY_API}/content/${USER}/${REPO}/${RPM_NAME}/${RPM_VERSION}-${RPM_RELEASE}/publish -d "{ \"discard\": \"false\" }" -w '%{http_code}' -o /dev/null)
 
@@ -144,4 +150,20 @@ if [ $rc -eq 200 ]; then
 else
 	printf "failed\n"
 	exit 1
+fi
+
+if [ "$SIGN_RPM" == "true" ]; then
+	if [ -r "${CWD}/.gpg-passphrase" ]; then
+		CURL_GPG_OPT="-H \"X-GPG-PASSPHRASE: $(cat ${CWD}/.bintray-auth)\""
+	fi
+	printf "Signing ${RPM_BASENAME} package in Bintray... "
+	rc=$(curl -sk --connect-timeout 30 -m 60 -u "${USER}:${APIKEY}" -X POST -H "Content-Type:application/json" -H "Accept:application/json" \
+"${CURL_GPG_OPT}" "${BINTRAY_API}/gpg/robertalks/yum/${RPM_BASENAME}" -w '%{http_code}' -o /dev/null)
+
+	if [ $rc -eq 200 ]; then
+		printf "done\n"
+	else
+		printf "failed\n"
+		exit 1
+	fi
 fi
