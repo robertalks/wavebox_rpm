@@ -141,6 +141,22 @@ else
 	exit 1
 fi
 
+if [ "$SIGN_RPM" == "true" ]; then
+	if [ -r "${CWD}/.gpg-passphrase" ]; then
+		CURL_GPG_OPT="-H \"X-GPG-PASSPHRASE: $(cat ${CWD}/.bintray-auth)\""
+	fi
+	printf "Signing ${RPM_BASENAME} package in Bintray... "
+	rc=$(curl -sk --connect-timeout 30 -m 60 -u "${USER}:${APIKEY}" -X POST -H "Content-Type:application/json" -H "Accept:application/json" \
+"${CURL_GPG_OPT}" "${BINTRAY_API}/gpg/robertalks/yum/${RPM_NAME}/versions/${RPM_VERSION}-${RPM_RELEASE}" -w '%{http_code}' -o /dev/null)
+
+	if [ $rc -eq 200 ]; then
+		printf "done\n"
+	else
+		printf "failed\n"
+		exit 1
+	fi
+fi
+
 printf "Publishing ${RPM_BASENAME} package to Bintray... "
 rc=$(curl -sk --connect-timeout 30 -m 60 -u "${USER}:${APIKEY}" -X POST -H "Content-Type:application/json" -H "Accept:application/json" \
 ${BINTRAY_API}/content/${USER}/${REPO}/${RPM_NAME}/${RPM_VERSION}-${RPM_RELEASE}/publish -d "{ \"discard\": \"false\" }" -w '%{http_code}' -o /dev/null)
@@ -150,20 +166,4 @@ if [ $rc -eq 200 ]; then
 else
 	printf "failed\n"
 	exit 1
-fi
-
-if [ "$SIGN_RPM" == "true" ]; then
-	if [ -r "${CWD}/.gpg-passphrase" ]; then
-		CURL_GPG_OPT="-H \"X-GPG-PASSPHRASE: $(cat ${CWD}/.bintray-auth)\""
-	fi
-	printf "Signing ${RPM_BASENAME} package in Bintray... "
-	rc=$(curl -sk --connect-timeout 30 -m 60 -u "${USER}:${APIKEY}" -X POST -H "Content-Type:application/json" -H "Accept:application/json" \
-"${CURL_GPG_OPT}" "${BINTRAY_API}/gpg/robertalks/yum/${RPM_BASENAME}" -w '%{http_code}' -o /dev/null)
-
-	if [ $rc -eq 200 ]; then
-		printf "done\n"
-	else
-		printf "failed\n"
-		exit 1
-	fi
 fi
