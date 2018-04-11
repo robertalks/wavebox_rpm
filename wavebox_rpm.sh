@@ -30,7 +30,7 @@ Example:
 EOF
 }
 
-wavebox_get_version() {
+wavebox_set_version() {
 	local app_version=
 	local tmp_file="/tmp/.version.$$"
 
@@ -41,6 +41,34 @@ wavebox_get_version() {
 	printf "$app_version\n"
 
 	WAVEBOX_VERSION=$app_version
+}
+
+wavebox_set_release() {
+	local new_version="$1"
+	local old_version=""
+	local release=""
+
+	if [ -r "${CWD}/.version" ]; then
+		old_version="$(cat ${CWD}/.version)"
+	else
+		echo "$new_version" > ${CWD}/.version
+	fi
+
+	if [ -r "${CWD}/.release" ]; then
+		release=$(cat ${CWD}/.release)
+	else
+		release=0
+	fi
+
+	if [ "$new_version" == "$old_version" ]; then
+		release=$(($release + 1))
+	else
+		release=0
+	fi
+
+	echo "$release" > ${CWD}/.release
+
+	RPM_REVISION=$release
 }
 
 while getopts "ha:" opt; do
@@ -70,7 +98,8 @@ case "${RPM_ARCH}" in
 	;;
 esac
 
-wavebox_get_version
+wavebox_set_version
+wavebox_set_release "${WAVEBOX_VERSION}"
 
 if [ "${WAVEBOX_VERSION}" == "" ]; then
 	printf "Unable to determine version, something went wrong... \n" >&2
@@ -82,7 +111,6 @@ WAVEBOX_ALT_VERSION="$(echo ${WAVEBOX_VERSION} | sed 's/\./_/g')"
 PACKAGE_NAME="Wavebox_${WAVEBOX_ALT_VERSION}_linux_${PACKAGE_ARCH}.tar.gz"
 PACKAGE_URL="https://github.com/wavebox/waveboxapp/releases/download/v${WAVEBOX_VERSION}/${PACKAGE_NAME}"
 RPM_PACKAGE_NAME="wavebox"
-RPM_REVISION="1"
 RPM_PACKAGE="${RPM_PACKAGE_NAME}-${WAVEBOX_VERSION}-${RPM_REVISION}.${RPM_ARCH}.rpm"
 RPM_BUILD_PATH="${TMP_PATH}/rpmbuild"
 
@@ -113,6 +141,11 @@ ExcludeArch:      noarch
 Source:           ${PACKAGE_NAME}
 Requires(post):   coreutils shared-mime-info desktop-file-utils
 Requires(postun): shared-mime-info desktop-file-utils
+%if 0%{?suse_version}
+Requires:         libXss1
+%else
+Requires:         libXScrnSaver
+%endif
 Packager:         Robert Milasan <robert@linux-source.org>
 
 %description
@@ -127,6 +160,8 @@ Add the apps you use everyday and effortlessly switch between them for an easier
 %install
 mkdir -p \$RPM_BUILD_ROOT/${WAVEBOX_PATH}
 cp -afR * \$RPM_BUILD_ROOT/${WAVEBOX_PATH}
+mkdir -p \$RPM_BUILD_ROOT/usr/bin
+ln -sf ${WAVEBOX_PATH}/Wavebox \$RPM_BUILD_ROOT/usr/bin/Wavebox
 
 mkdir -p \$RPM_BUILD_ROOT/usr/share/applications
 install -m 644 wavebox.desktop \$RPM_BUILD_ROOT/usr/share/applications/wavebox.desktop
@@ -187,6 +222,7 @@ $WAVEBOX_PATH/*
 %attr(755,root,root) $WAVEBOX_PATH/Wavebox
 %attr(755,root,root) $WAVEBOX_PATH/libnode.so
 %attr(755,root,root) $WAVEBOX_PATH/libffmpeg.so
+/usr/bin/Wavebox
 /usr/share/applications/wavebox.desktop
 /usr/share/pixmaps/wavebox.png
 /usr/share/icons/hicolor/32x32/apps/wavebox.png

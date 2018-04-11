@@ -4,7 +4,6 @@ NAME="$(basename $0)"
 CWD="$(pwd)"
 BINTRAY_API="https://api.bintray.com"
 APIKEY=""
-SIGN_RPM=false
 
 usage() {
 	cat << EOF
@@ -19,8 +18,6 @@ Usage: ${NAME} [OPTIONS]
                     (default: none, requires to be set)
         -u [...]    Set Bintray username
                     (default: none, requires to be set)
-        -s          Sign RPM package
-                    (default: disable)
 
 Example:
        ${NAME} -f mynewapp-1.0.x86_64.rpm -r myrepo -u myaccount
@@ -42,9 +39,6 @@ while getopts "hf:r:u:s" opt; do
 		;;
 		u)
 			USER="${OPTARG}"
-		;;
-		s)
-			SIGN_RPM=true
 		;;
 	esac
 done
@@ -139,22 +133,6 @@ if [ $rc -eq 201 ]; then
 else
 	printf "failed\n"
 	exit 1
-fi
-
-if [ "$SIGN_RPM" == "true" ]; then
-	if [ -r "${CWD}/.gpg-passphrase" ]; then
-		CURL_GPG_OPT="-H \"X-GPG-PASSPHRASE: $(cat ${CWD}/.bintray-auth)\""
-	fi
-	printf "Signing ${RPM_BASENAME} package in Bintray... "
-	rc=$(curl -sk --connect-timeout 30 -m 60 -u "${USER}:${APIKEY}" -X POST -H "Content-Type:application/json" -H "Accept:application/json" \
-"${CURL_GPG_OPT}" "${BINTRAY_API}/gpg/robertalks/yum/${RPM_NAME}/versions/${RPM_VERSION}-${RPM_RELEASE}" -w '%{http_code}' -o /dev/null)
-
-	if [ $rc -eq 200 ]; then
-		printf "done\n"
-	else
-		printf "failed\n"
-		exit 1
-	fi
 fi
 
 printf "Publishing ${RPM_BASENAME} package to Bintray... "
