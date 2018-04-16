@@ -162,6 +162,7 @@ mkdir -p \$RPM_BUILD_ROOT/${WAVEBOX_PATH}
 cp -afR * \$RPM_BUILD_ROOT/${WAVEBOX_PATH}
 mkdir -p \$RPM_BUILD_ROOT/usr/bin
 ln -sf ${WAVEBOX_PATH}/Wavebox \$RPM_BUILD_ROOT/usr/bin/Wavebox
+ln -sf ${WAVEBOX_PATH}/Wavebox \$RPM_BUILD_ROOT/usr/bin/wavebox
 
 mkdir -p \$RPM_BUILD_ROOT/usr/share/applications
 install -m 644 wavebox.desktop \$RPM_BUILD_ROOT/usr/share/applications/wavebox.desktop
@@ -223,6 +224,7 @@ $WAVEBOX_PATH/*
 %attr(755,root,root) $WAVEBOX_PATH/libnode.so
 %attr(755,root,root) $WAVEBOX_PATH/libffmpeg.so
 /usr/bin/Wavebox
+/usr/bin/wavebox
 /usr/share/applications/wavebox.desktop
 /usr/share/pixmaps/wavebox.png
 /usr/share/icons/hicolor/32x32/apps/wavebox.png
